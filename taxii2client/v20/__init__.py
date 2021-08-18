@@ -573,6 +573,7 @@ class ApiRoot(_TAXIIEndpoint):
         """
         super(ApiRoot, self).__init__(url, conn, user, password, verify, proxies, auth=auth, cert=cert)
 
+        self._conn = conn
         self._loaded_collections = False
         self._loaded_information = False
         self.__raw = None
@@ -667,9 +668,10 @@ class ApiRoot(_TAXIIEndpoint):
         """
         url = self.url + "collections/"
         response = self._conn.get(url, headers={"Accept": accept})
+        parsed = json.loads(response.text)
 
         self._collections = []
-        for item in response.get("collections", []):  # optional
+        for item in parsed.get("collections", []):  # optional
             collection_url = url + item["id"] + "/"
             collection = Collection(collection_url, conn=self._conn,
                                     collection_info=item)
@@ -719,6 +721,7 @@ class Server(_TAXIIEndpoint):
         """
         super(Server, self).__init__(url, conn, user, password, verify, proxies, auth=auth, cert=cert)
 
+        self._conn = conn
         self._user = user
         self._password = password
         self._verify = verify
@@ -782,6 +785,7 @@ class Server(_TAXIIEndpoint):
         self._contact = contact  # optional
         roots = api_roots or []  # optional
         self._api_roots = [ApiRoot(url,
+                                   conn=self._conn,
                                    user=self._user,
                                    password=self._password,
                                    verify=self._verify,
@@ -803,5 +807,8 @@ class Server(_TAXIIEndpoint):
     def refresh(self):
         """Update the Server information and list of API Roots"""
         response = self.__raw = self._conn.get(self.url)
-        self._populate_fields(**response)
+        print('QUERY:', self.url)
+        print('RESPONSE: ', response.text)
+        dictionary = json.loads(response.text)
+        self._populate_fields(**dictionary)
         self._loaded = True
